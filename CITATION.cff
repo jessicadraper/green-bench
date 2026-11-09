@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "If you use GreenBench in research, please cite it as below."
+title: "GreenBench"
+type: software
+authors:
+  - family-names: Draper
+    given-names: Jessica
+version: 0.2.0
+repository-code: "https://github.com/jessicadraper/green-bench"
+license: MIT
+preferred-citation:
+  type: thesis
+  thesis-type: "Master's thesis"
+  title: "Evaluating the Environmental Impact of Software Design: An Empirical Analysis using Automated Software Emissions Benchmarking"
+  authors:
+    - family-names: Draper
+      given-names: Jessica
+  institution:
+    name: "Hochschule Campus Wien"
+    city: Vienna
+    country: AT
+  year: 2026
+  url: "https://pub.hcw.ac.at/obvfcwhsacc/download/pdf/14843036"

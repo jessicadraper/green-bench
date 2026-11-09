@@ -1,0 +1,83 @@
+[build-system]
+requires = ["setuptools>=77.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "green-bench"
+dynamic = ["version"]
+description = "A CLI tool for automated, statistically sound green software benchmarking."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [
+    { name = "Jessica Draper", email = "jessicafaye.draper@gmail.com" }
+]
+keywords = ["green software", "energy", "benchmark", "carbon", "sustainability", "energibridge"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Operating System :: MacOS",
+    "Operating System :: Linux",
+    "Operating System :: Windows",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Testing",
+    "Topic :: System :: Benchmark",
+]
+dependencies = [
+    "typer>=0.12.0",    # CLI framework
+    "rich>=13.0.0",     # terminal output
+    "pandas>=2.2.0",    # results data structuring
+    "numpy>=2.0.0",     # numerical integration (np.trapezoid)
+    "scipy>=1.12.0",    # Mann-Whitney U test
+]
+
+[project.optional-dependencies]
+plots = [
+    "matplotlib>=3.8.0",
+    "seaborn>=0.13.0",
+]
+dev = [
+    "pytest>=8.0.0",
+    "psutil>=6.0.0",    # only used by the observer-effect integration test
+    "ruff>=0.5.0",
+    "matplotlib>=3.8.0",
+    "seaborn>=0.13.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/jessicadraper/green-bench"
+Repository = "https://github.com/jessicadraper/green-bench"
+Issues = "https://github.com/jessicadraper/green-bench/issues"
+
+[project.scripts]
+green-bench = "green_bench.__main__:app"
+
+[tool.setuptools.package-data]
+green_bench = ["demo_data/**/*.py"]
+
+[tool.setuptools.dynamic]
+version = { attr = "green_bench.__version__" }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["integration: needs the real EnergiBridge binary and hardware access"]
+filterwarnings = [
+    # seaborn 0.13.2 still passes `vert=` to matplotlib >= 3.10 internally; not fixable from our code.
+    # Remove once a seaborn release no longer triggers it.
+    "ignore:.*bool will be deprecated in a future version:PendingDeprecationWarning",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = ["E501"]  # long CLI help strings
