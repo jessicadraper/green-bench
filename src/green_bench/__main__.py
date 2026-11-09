@@ -39,7 +39,7 @@ class _DefaultToCompare(typer.core.TyperGroup):
 app = typer.Typer(
     cls=_DefaultToCompare,
     add_completion=False,
-    help="Green Software Benchmarking CLI Tool.\n\n"
+    help="Green Software Energy Benchmarking CLI Tool.\n\n"
          "Run `green-bench demo` to try it on a bundled example, or `green-bench compare --help` "
          "(or just `green-bench --name ...`) to compare two versions of your own project.",
 )
@@ -128,9 +128,9 @@ def compare(
 
 def _run_compare(*, name, base, compare, setup, cmd, iterations, carbon_intensity, output, seed,
                  cooldown, interval, timeout, keep_raw, resume, overwrite, no_plots):
-    console.print("━" * 65, style="dim white")
-    console.print(f"[bold green]GreenBench Automated Benchmarking Engine v{__version__}[/bold green]")
-    console.print("━" * 65, style="dim white")
+    console.print("━" * 75, style="dim white")
+    console.print(f"[bold green]GreenBench: Automated Software Energy Benchmarking Engine v{__version__}[/bold green]")
+    console.print("━" * 75, style="dim white")
 
     results_dir = output / name
     start_time = datetime.now()
