@@ -6,6 +6,17 @@ and this project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- Windows: the EnergiBridge output path was quoted POSIX-style (`'...'`), which `cmd.exe` rejects (error 123). Paths are now quoted for the shell in use.
+- Windows: on timeout or Ctrl-C the whole process tree (EnergiBridge and the workload) is now stopped, not just `cmd.exe`.
+- Windows: `--cmd` validation no longer treats backslashes in paths as escape characters, and `energibridge` is resolved through `PATHEXT` (e.g. a `.cmd` shim).
+- Windows: `green-bench demo` uses a setup command that exists in `cmd.exe`, and prints a copy-pasteable command with Windows quoting.
+
+### Added
+
+- The test suite now runs on Windows (`windows-latest`) in CI, alongside Linux and macOS.
+
 ## 0.2.0 - 2026-11-09
 
 First public release. This version reworks the private thesis version (0.1.0) for general use: more robust experiment handling, safer file handling, broader platform support and a revised statistical report.

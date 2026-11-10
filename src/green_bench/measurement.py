@@ -1,6 +1,8 @@
 """Thin facade around the external EnergiBridge telemetry tool."""
 
+import os
 import shlex
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -13,6 +15,22 @@ class MeasurementError(BenchmarkError):
     """Telemetry output is missing, malformed, or cannot be interpreted."""
 
 
+def is_windows() -> bool:
+    """Whether commands will be run by ``cmd.exe`` (a seam so tests can exercise both branches)."""
+    return os.name == "nt"
+
+
+def quote_arg(value: object) -> str:
+    """Quote one argument for the shell that ``Popen(shell=True)`` uses on this OS.
+
+    POSIX shells understand ``shlex.quote``'s single quotes; ``cmd.exe`` does not,
+    so on Windows use the double-quote rules of ``list2cmdline``.
+    """
+    if is_windows():
+        return subprocess.list2cmdline([str(value)])
+    return shlex.quote(str(value))
+
+
 class MeasurementWrapper:
     """Facade abstraction layer for external hardware tools."""
 
@@ -21,14 +39,19 @@ class MeasurementWrapper:
     @classmethod
     def verify_dependencies(cls) -> None:
         """Check that EnergiBridge is installed and runnable."""
+        # which() honours PATHEXT, so .cmd/.bat shims resolve on Windows too.
+        resolved = shutil.which(cls.BINARY)
+        not_found = BenchmarkError(
+            "EnergiBridge was not found on your PATH. Install it from "
+            "https://github.com/tdurieux/EnergiBridge and make sure `energibridge` "
+            "runs in this terminal (it may need elevated privileges)."
+        )
+        if resolved is None:
+            raise not_found
         try:
-            subprocess.run([cls.BINARY, "--version"], capture_output=True, check=True)
+            subprocess.run([resolved, "--version"], capture_output=True, check=True)
         except FileNotFoundError:
-            raise BenchmarkError(
-                "EnergiBridge was not found on your PATH. Install it from "
-                "https://github.com/tdurieux/EnergiBridge and make sure `energibridge` "
-                "runs in this terminal (it may need elevated privileges)."
-            ) from None
+            raise not_found from None
         except subprocess.CalledProcessError as err:
             raise BenchmarkError(
                 f"`energibridge --version` failed with exit code {err.returncode}. "
@@ -51,7 +74,8 @@ class MeasurementWrapper:
         if "\n" in target_cmd.strip():
             operator = "a newline"
         else:
-            lexer = shlex.shlex(target_cmd, posix=True, punctuation_chars=True)
+            # cmd.exe: backslashes are path separators, not escapes.
+            lexer = shlex.shlex(target_cmd, posix=not is_windows(), punctuation_chars=True)
             lexer.whitespace_split = True
             try:
                 found = next((t for t in lexer if t in cls._CHAIN_OPERATORS), None)
@@ -73,9 +97,9 @@ class MeasurementWrapper:
         The sampling interval defaults to 500 ms: very short intervals can make
         EnergiBridge compete with the workload for CPU and sample late.
         ``target_cmd`` is passed through verbatim (it is user-supplied shell text);
-        only the output path is quoted.
+        only the output path is quoted, using the quoting rules of the platform's shell.
         """
-        return f"{cls.BINARY} -i {int(interval_ms)} --output {shlex.quote(str(output_csv))} {target_cmd}"
+        return f"{cls.BINARY} -i {int(interval_ms)} --output {quote_arg(output_csv)} {target_cmd}"
 
     @classmethod
     def generate_warmup_command(cls, output_csv: Path, target_cmd: str, interval_ms: int = 500) -> str:
