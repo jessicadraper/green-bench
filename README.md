@@ -1,6 +1,8 @@
-<center><img src="https://github.com/jessicadraper/green-bench/blob/main/docs/images/GreenBench_logo.png?raw=true" alt="GreenBench logo" width="250"></center>
+<p align="center">
+  <img src="https://raw.githubusercontent.com/jessicadraper/green-bench/main/docs/images/GreenBench_logo.png" alt="GreenBench logo" width="250">
+</p>
 
-# Green Bench
+# GreenBench
 
 ### Automated, localized software energy benchmarking framework _designed for developers_
 
