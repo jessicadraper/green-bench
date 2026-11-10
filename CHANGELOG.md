@@ -6,6 +6,8 @@ and this project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## 0.2.1 - 2026-11-10
+
 ### Fixed
 
 - Windows: the EnergiBridge output path was quoted POSIX-style (`'...'`), which `cmd.exe` rejects (error 123). Paths are now quoted for the shell in use.
