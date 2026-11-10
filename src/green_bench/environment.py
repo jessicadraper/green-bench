@@ -74,19 +74,25 @@ class EnvironmentManager:
     @staticmethod
     def _terminate(process: subprocess.Popen) -> None:
         """Stop the process and everything it spawned (EnergiBridge + workload)."""
+        if os.name == "nt":
+            # terminate() would only stop cmd.exe; /T takes the whole tree down with it.
+            subprocess.run(
+                ["taskkill", "/T", "/F", "/PID", str(process.pid)],
+                capture_output=True,
+                check=False,
+            )
+            try:
+                process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                pass
+            return
         try:
-            if hasattr(os, "killpg"):
-                os.killpg(os.getpgid(process.pid), signal.SIGTERM)
-            else:
-                process.terminate()
+            os.killpg(os.getpgid(process.pid), signal.SIGTERM)
             process.wait(timeout=5)
         except (ProcessLookupError, PermissionError):
             pass
         except subprocess.TimeoutExpired:
-            if hasattr(os, "killpg"):
-                os.killpg(os.getpgid(process.pid), signal.SIGKILL)
-            else:
-                process.kill()
+            os.killpg(os.getpgid(process.pid), signal.SIGKILL)
 
     def execute_workload(
         self, command: str, run_context: str = "WORKLOAD", timeout: Optional[float] = None
@@ -103,6 +109,11 @@ class EnvironmentManager:
             log_file.write(f"{'=' * 80}\n\n")
             log_file.flush()
 
+            # Own process group / session so we can stop the whole tree.
+            if os.name == "nt":
+                group = {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP}
+            else:
+                group = {"start_new_session": True}
             try:
                 process = subprocess.Popen(
                     command,
@@ -112,7 +123,7 @@ class EnvironmentManager:
                     stderr=subprocess.STDOUT,
                     text=True,
                     bufsize=1,
-                    start_new_session=True,  # own process group so we can stop the whole tree
+                    **group,
                 )
             except OSError as err:
                 raise WorkloadExecutionError(-1, f"Could not start command '{command}': {err}") from err

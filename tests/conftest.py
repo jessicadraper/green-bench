@@ -7,7 +7,7 @@ import pytest
 
 FAKE_ENERGIBRIDGE = '''#!{python}
 """Minimal stand-in for EnergiBridge: runs the command, writes a plausible CSV."""
-import subprocess, sys, time
+import os, shlex, subprocess, sys, time
 args = sys.argv[1:]
 if args[:1] == ["--version"]:
     print("energibridge 0.0-fake"); sys.exit(0)
@@ -21,7 +21,9 @@ while i < len(args):
         out = args[i + 1]; i += 2
     else:
         rest = args[i:]; break
-rc = subprocess.run(" ".join(rest), shell=True).returncode
+# The shell already split the command into args; re-quote them so spaces/quotes survive.
+cmd = subprocess.list2cmdline(rest) if os.name == "nt" else shlex.join(rest)
+rc = subprocess.run(cmd, shell=True).returncode
 if out:
     with open(out, "w") as f:
         f.write("Delta,Time,SYSTEM_POWER (Watts)\\n")
@@ -35,9 +37,16 @@ sys.exit(rc)
 def fake_energibridge(tmp_path, monkeypatch) -> Path:
     bindir = tmp_path / "bin"
     bindir.mkdir()
-    exe = bindir / "energibridge"
-    exe.write_text(FAKE_ENERGIBRIDGE.format(python=sys.executable))
-    exe.chmod(exe.stat().st_mode | stat.S_IXUSR)
+    script = FAKE_ENERGIBRIDGE.format(python=sys.executable)
+    if os.name == "nt":
+        # No shebangs on Windows: a .cmd shim (found via PATHEXT) calls the Python script.
+        (bindir / "energibridge_impl.py").write_text(script)
+        exe = bindir / "energibridge.cmd"
+        exe.write_text(f'@"{sys.executable}" "%~dp0energibridge_impl.py" %*\r\n')
+    else:
+        exe = bindir / "energibridge"
+        exe.write_text(script)
+        exe.chmod(exe.stat().st_mode | stat.S_IXUSR)
     monkeypatch.setenv("PATH", f"{bindir}{os.pathsep}{os.environ['PATH']}")
     return exe
 

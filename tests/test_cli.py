@@ -1,3 +1,4 @@
+from helpers import FAIL, PASS
 from typer.testing import CliRunner
 
 from green_bench import __version__
@@ -9,7 +10,7 @@ runner = CliRunner()
 def _args(tmp_path, **over):
     a, b = tmp_path / "a", tmp_path / "b"
     a.mkdir(exist_ok=True), b.mkdir(exist_ok=True)
-    args = ["--name", "demo", "-b", str(a), "-c", str(b), "--setup", "true", "--cmd", "true",
+    args = ["--name", "demo", "-b", str(a), "-c", str(b), "--setup", PASS, "--cmd", PASS,
             "-n", "3", "--cooldown", "0", "--seed", "1", "-o", str(tmp_path / "out")]
     return args
 
@@ -43,7 +44,7 @@ def test_end_to_end(tmp_path, fake_energibridge):
 
 def test_failing_workload_exits_nonzero(tmp_path, fake_energibridge):
     args = _args(tmp_path)
-    args[args.index("--cmd") + 1] = "false"
+    args[args.index("--cmd") + 1] = FAIL
     result = runner.invoke(app, args)
     assert result.exit_code == 1
 
@@ -101,7 +102,7 @@ def test_overwrite_deletes_only_greenbench_files_and_only_after_preflight(tmp_pa
     assert (folder / "results.csv").exists()  # nothing was deleted by the failed attempt
 
     failing = _args(tmp_path) + ["--overwrite"]
-    failing[failing.index("--cmd") + 1] = "false"  # starts, then fails during warm-up
+    failing[failing.index("--cmd") + 1] = FAIL  # starts, then fails during warm-up
     assert runner.invoke(app, failing).exit_code == 1
     assert not (folder / "results.csv").exists() and not (folder / "energy_distribution.png").exists()
     assert (folder / "notes.txt").read_text() == "mine"  # not ours: left alone

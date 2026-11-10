@@ -1,5 +1,5 @@
+import os
 import re
-import shlex
 import shutil
 import sys
 import time
@@ -18,7 +18,7 @@ from rich.text import Text
 from green_bench import __version__
 from green_bench.analysis import AnalysisEngine
 from green_bench.environment import EnvironmentManager
-from green_bench.measurement import BenchmarkError, MeasurementWrapper
+from green_bench.measurement import BenchmarkError, MeasurementWrapper, quote_arg
 from green_bench.orchestrator import ExperimentOrchestrator
 from green_bench.results import FOREIGN, HAS_RESULTS, classify, describe
 
@@ -218,16 +218,17 @@ def _format_command(*, name: str, base: Path, compare: Path, setup: str, cmd: st
         return f"{value:g}"
 
     lines = [
-        f"green-bench --name {shlex.quote(name)}",
-        f"-b {shlex.quote(base.as_posix())} -c {shlex.quote(compare.as_posix())}",
-        f"--setup {shlex.quote(setup)} --cmd {shlex.quote(cmd)}",
+        f"green-bench --name {quote_arg(name)}",
+        f"-b {quote_arg(base.as_posix())} -c {quote_arg(compare.as_posix())}",
+        f"--setup {quote_arg(setup)} --cmd {quote_arg(cmd)}",
         f"-n {iterations} --cooldown {fmt(cooldown)}",
     ]
     if output is not None:
-        lines[-1] += f" -o {shlex.quote(output.as_posix())}"
+        lines[-1] += f" -o {quote_arg(output.as_posix())}"
     if seed is not None:
         lines[-1] += f" --seed {seed}"
-    return " \\\n  ".join(lines)
+    # Backslash continuation is POSIX-only; cmd.exe and PowerShell each use something else.
+    return " ".join(lines) if os.name == "nt" else " \\\n  ".join(lines)
 
 
 def _print_command(command: str, title: str) -> None:
@@ -250,7 +251,9 @@ def demo(
     """
     _copy_demo_programs(DEMO_DIR)
     python = "python" if sys.platform == "win32" or not shutil.which("python3") else "python3"
-    base, compare, setup, cmd = DEMO_DIR / "naive", DEMO_DIR / "optimized", "true", f"{python} {DEMO_WORKLOAD}"
+    # `true` is not a cmd.exe command, so use a no-op that exists everywhere Python does.
+    setup = f'{python} -c "pass"' if os.name == "nt" else "true"
+    base, compare, cmd = DEMO_DIR / "naive", DEMO_DIR / "optimized", f"{python} {DEMO_WORKLOAD}"
     command = _format_command(
         name=DEMO_NAME, base=base, compare=compare, setup=setup, cmd=cmd, iterations=iterations,
         cooldown=cooldown, output=None if output == Path("green-bench-results") else output, seed=seed,

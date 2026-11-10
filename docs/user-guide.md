@@ -15,6 +15,8 @@ GreenBench shells out to **EnergiBridge**, which must be installed separately an
 energibridge --version
 ```
 
+**Windows:** run GreenBench from an elevated (administrator) terminal. Commands are run by `cmd.exe`, so quote with double quotes (single quotes are not quote characters there).
+
 If it is missing GreenBench stops immediately with an explanation instead of failing mid-experiment.
 
 ## Try it first: `green-bench demo`
@@ -40,9 +42,9 @@ git worktree add ../myproj-treatment my-optimization
 ## Choosing the commands
 
 - `--cmd` is the workload. Make it deterministic, run for several seconds, and involve the code you changed. Example: `--cmd 'python3 workload.py'`.
-- `--setup` runs _before every measured run_ and is not measured. Use it to reset state (empty a database, delete caches) so every run starts the same. Pass `--setup true` if you need nothing.
+- `--setup` runs _before every measured run_ and is not measured. Use it to reset state (empty a database, delete caches) so every run starts the same. Pass `--setup true` if you need nothing (on Windows, `--setup "echo ready"`).
 - Both are shell commands run in the directory being tested.
-- `--cmd` must be a **single command**. Chaining (`a && b`, `a; b`, pipes, `&`) is rejected with an error, because EnergiBridge only wraps the first program and the rest would silently go unmeasured. Put multi-step workloads in one script (`--cmd './run_benchmark.sh'`). Operators inside quotes, such as `sh -c "a && b"`, are not treated as chaining.
+- `--cmd` must be a **single command**. Chaining (`a && b`, `a; b`, pipes, `&`) is rejected with an error, because EnergiBridge only wraps the first program and the rest would silently go unmeasured. Put multi-step workloads in one script (`--cmd './run_benchmark.sh'`).
 
 ## Typical sessions
 
